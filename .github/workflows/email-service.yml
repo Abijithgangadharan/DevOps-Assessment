@@ -1,0 +1,27 @@
+name: Build and Push Email Service
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        run: |
+          docker build -t pt-email-service -f Dockerfile-email .
+          docker tag pt-email-service:latest 785008697030.dkr.ecr.us-west-1.amazonaws.com/pt-email-service:latest
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push 785008697030.dkr.ecr.us-west-1.amazonaws.com/pt-email-service:latest
