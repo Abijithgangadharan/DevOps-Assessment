@@ -187,9 +187,47 @@ resource "aws_ecs_service" "email_service" {
     registry_arn = aws_service_discovery_service.email_service.arn
   }
 
-#   load_balancer {
-#     target_group_arn = aws_alb_target_group.notification_tg.arn
-#     container_name   = "pt-email-service"
-#     container_port   = 3000
-#   }
+  load_balancer {
+    target_group_arn = aws_alb_target_group.email_tg.arn
+    container_name   = "pt-email-service"
+    container_port   = 3000
+  }
  }
+
+ # ALB Target Group
+resource "aws_alb_target_group" "email_tg" {
+  name     = "email-tg"
+  port     = 3000
+  protocol = "HTTP"
+  vpc_id   = "vpc-0ff132c5791c89f58"
+  target_type = "ip" 
+
+  health_check {
+    path                = "/api/notification/send-email"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+}
+
+# ALB Listener
+resource "aws_alb_listener" "http_email" {
+  load_balancer_arn = aws_alb.email_lb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_alb_target_group.email_tg.arn
+  }
+}
+
+# ALB
+resource "aws_alb" "email_lb" {
+  name            = "email-lb"
+  internal        = false
+  load_balancer_type = "application"
+  security_groups = ["sg-0c87fd695f98bc8af"] 
+  subnets         = ["subnet-0e60438ba826ed1b4", "subnet-0f6ecd789b43a04c8"]  
+}
