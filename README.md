@@ -1,3 +1,59 @@
+# submission
+Deployment archetucter is attached 
+https://app.cloudcraft.co/view/054cf549-c0dc-4c53-a437-8920909d05d1?key=94fde856-2f6b-4794-a1ef-2a605b8de621
+
+To deploy interservice commutication using SQS run the following command
+
+cd apps/pt-notification-service-infra-cdk
+cdk bootstrap
+cdk deploy
+
+# To push the Docker images for the microservice run these command
+aws ecr get-login-password --region your-region | docker login --username AWS --password-stdin your-account-id.dkr.ecr.your-region.amazonaws.com
+
+docker tag pt-notification-service:latest your-account-id.dkr.ecr.your-region.amazonaws.com/pt-notification-service:latest
+
+docker push your-account-id.dkr.ecr.your-region.amazonaws.com/pt-notification-service:latest
+
+docker build -t pt-email-service -f Dockerfile-email .
+
+docker tag pt-email-service:latest your-account-id.dkr.ecr.your-region.amazonaws.com/pt-email-service:latest
+
+docker push your-account-id.dkr.ecr.your-region.amazonaws.com/pt-email-service:latest
+
+# to test the autocaling run the command 
+https://github.com/rakyll/hey/blob/master/README.md
+
+hey -n 1000 -c 100 http://notification-lb-hashed-region.elb.amazonaws.com/api
+
+# To test out the SES from email services run the following command
+curl -X POST http://localhost:3000/api/notification/send-email \
+    -H "Content-Type: application/json" \
+    -d '{
+        "primaryEmailProvider": {
+            "type": "ses",
+            "region": "hashed-region",
+            "accessKeyId": "hashed-access-key-id",
+            "secretAccessKey": "hashed-secret-access-key"
+        },
+        "fallbackEmailProvider": {
+            "type": "ses",
+            "region": "hashed-region",
+            "accessKeyId": "hashed-access-key-id",
+            "secretAccessKey": "hashed-secret-access-key"
+        },
+        "emailRequest": {
+            "from": "hashed-email@example.com",
+            "to": "hashed-email@example.com",
+            "subject": "Hello Pearl Thoughts",
+            "html": "<p>This is a test email from our notification service.</p>"
+        }
+    }'
+
+#
+
+
+
 # PearlThoughts Interview Assessment
 # Scalable Notification Service Deployment on AWS
 
