@@ -1,5 +1,6 @@
 # submission
-Deployment archetucter is attached 
+Deployment architecture is attached 
+![alt text](<Web App Reference Architecture.png>)
 https://app.cloudcraft.co/view/054cf549-c0dc-4c53-a437-8920909d05d1?key=94fde856-2f6b-4794-a1ef-2a605b8de621
 
 To deploy interservice commutication using SQS run the following command
