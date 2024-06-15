@@ -1,12 +1,13 @@
-name: Build and Push Email Service
+name: Build and Deploy Email Service
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,12 +19,11 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-1 
+          aws-region: us-west-1
 
       - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-
 
       - name: Build Docker image
         run: |
@@ -33,3 +33,12 @@ jobs:
       - name: Push Docker image to ECR
         run: |
           docker push 785008697030.dkr.ecr.us-west-1.amazonaws.com/pt-email-service:latest
+
+      - name: Update ECS service
+        env:
+          CLUSTER_NAME: notification-cluster
+          SERVICE_NAME: email-service
+          AWS_REGION: us-west-1
+        run: |
+          aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
+
