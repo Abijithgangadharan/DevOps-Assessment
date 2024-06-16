@@ -41,4 +41,3 @@ jobs:
           AWS_REGION: us-west-1
         run: |
           aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
-
