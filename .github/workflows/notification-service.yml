@@ -33,3 +33,11 @@ jobs:
       - name: Push Docker image to ECR
         run: |
           docker push 785008697030.dkr.ecr.us-west-1.amazonaws.com/pt-notification-service:latest
+
+      - name: Update ECS service
+        env:
+          CLUSTER_NAME: notification-cluster
+          SERVICE_NAME: notification-service
+          AWS_REGION: us-west-1
+        run: |
+          aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
