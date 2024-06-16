@@ -3,6 +3,10 @@ resource "aws_cloudwatch_log_group" "pt-notification-service" {
  name              = "/ecs/pt-notification-service"  # Adjust the log group name as needed
  retention_in_days = 7  # Adjust retention period as needed
 }
+resource "aws_cloudwatch_log_group" "pt-email-service" {
+ name              = "/ecs/pt-email-service"  # Adjust the log group name as needed
+ retention_in_days = 7  # Adjust retention period as needed
+}
 
 # CloudWatch Log Stream for Notification API Service
 resource "aws_cloudwatch_log_stream" "notification_api_log_stream" {
