@@ -45,7 +45,7 @@ jobs:
     needs: build-and-deploy
     steps:
       - name: Deploy updated container image via blue/green deployment to ECS service
-        uses: silinternational/ecs-deploy@master
+        uses: silinternational/ecs-deploy@v2.0.0
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
