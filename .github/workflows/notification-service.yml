@@ -45,12 +45,12 @@ jobs:
     needs: build-and-deploy
     steps:
       - name: Deploy updated container image via blue/green deployment to ECS service
-        uses: silinternational/ecs-deploy@master
+        uses: silinternational/ecs-deploy@v2.3.0
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           cluster: 'notification-cluster'
-          service-name: 'notification-service'
+          service_name: 'notification-service'
           image: ${{ env.IMAGE }}
           region: ${{ env.AWS_REGION }}
           timeout: '360'
