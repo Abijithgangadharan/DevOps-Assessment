@@ -42,7 +42,7 @@ jobs:
 
   deploy-to-ecs:
     name: 'Deploy updated container image via blue/green deployment to ECS service.'
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build-and-deploy
     steps:
       - name: Deploy to ECS
