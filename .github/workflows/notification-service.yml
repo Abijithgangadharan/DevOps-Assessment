@@ -1,4 +1,4 @@
-name: Build and Push Notification Service
+name: Build and Deploy Notification Service
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-push: 
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,14 +25,19 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build Docker image
-        run: |
-          docker build -t pt-notification-service .
-          docker tag pt-notification-service:latest 785008697030.dkr.ecr.us-west-1.amazonaws.com/pt-notification-service:latest
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: 785008697030.dkr.ecr.us-west-1.amazonaws.com/pt-notification-service
 
-      - name: Push Docker image to ECR
-        run: |
-          docker push 785008697030.dkr.ecr.us-west-1.amazonaws.com/pt-notification-service:latest
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Update ECS service
         env:
