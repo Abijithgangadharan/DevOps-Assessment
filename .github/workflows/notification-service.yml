@@ -33,7 +33,7 @@ jobs:
         id: deploy-task-def
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: /home/runner/work/_temp/task-definition--2988-94CMfX9JAOn7-.json
+          task-definition: .aws/task-definition.json
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
