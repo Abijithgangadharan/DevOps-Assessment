@@ -12,9 +12,6 @@ env:
   ECS_CLUSTER: pt-notification-cluster
   CONTAINER_NAME: notification-service-container
   ACCOUNT_ID: ***
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  IMAGE_URI: ***.dkr.ecr.us-west-1.amazonaws.com/pt-notification-service:latest
 
 jobs:
   deploy:
