@@ -29,7 +29,7 @@ jobs:
       - name: Fetch Notification Service Task Definition ARN from Terraform
         id: fetch-notification-task-def
         run: |
-          echo "Fetching Notification Service task definition ARN from Terraform outputs"
+          # Run terraform output command to get the ARN of the notification service task definition
           TASK_DEFINITION_ARN=$(terraform output aws_ecs_task_definition.notification_task.arn)
           echo "NOTIFICATION_TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN" >> $GITHUB_ENV
 
