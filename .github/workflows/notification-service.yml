@@ -12,6 +12,7 @@ env:
   ECS_CLUSTER: pt-notification-cluster
   CONTAINER_NAME: notification-service-container
   ACCOUNT_ID: 785008697030
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -48,6 +49,7 @@ jobs:
       - name: Push Docker image to ECR
         run: |
           docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+
   deploy-to-ecs:
     name: Deploy to ECS
     runs-on: ubuntu-latest
@@ -65,7 +67,7 @@ jobs:
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: .aws/task-definition.json  # Path to your ECS task definition JSON file
+          task-definition: .aws/task-definition.json
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ needs.build-and-push.outputs.IMAGE_URI }}
 
