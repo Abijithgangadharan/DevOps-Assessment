@@ -9,7 +9,7 @@ env:
   AWS_REGION: us-west-1
   ECR_REPOSITORY: pt-notification-service
   ECS_SERVICE: pt-notification-service
-  ECS_CLUSTER: pt-notification-cluster
+  ECS_CLUSTER: notification-cluster
   CONTAINER_NAME: pt-notification-service
   ECS_TASK_DEFINITION: .aws/task-definition.json
   ACCOUNT_ID: 785008697030
