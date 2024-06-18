@@ -63,13 +63,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Update ECS service with new image
-        run: |
-          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ${{ env.ECS_SERVICE }} | jq --arg IMAGE_URI "${{ needs.build-and-push.outputs.IMAGE_URI }}" '.taskDefinition | .containerDefinitions[0].image = $IMAGE_URI | del(.status, .taskDefinitionArn, .requiresAttributes, .revision, .registeredAt, .registeredBy)')
-          echo "New Task Definition: $TASK_DEFINITION"
-          REGISTERED_TASK_DEFINITION=$(aws ecs register-task-definition --cli-input-json "$TASK_DEFINITION")
-          echo "Registered Task Definition: $REGISTERED_TASK_DEFINITION"
-          TASK_DEFINITION_ARN=$(echo $REGISTERED_TASK_DEFINITION | jq -r '.taskDefinition.taskDefinitionArn')
-          echo "Updating ECS service with task definition ARN: $TASK_DEFINITION_ARN"
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --task-definition $TASK_DEFINITION_ARN --region ${{ env.AWS_REGION }}
-          echo "ECS service updated successfully."
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: .aws/task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ needs.build-and-push.outputs.IMAGE_URI }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
