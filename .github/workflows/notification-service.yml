@@ -4,6 +4,15 @@ on:
   push:
     branches:
       - main
+
+env:
+  AWS_REGION: us-west-1
+  ECR_REPOSITORY: pt-notification-service
+  ECS_SERVICE: pt-notification-service
+  ECS_CLUSTER: pt-notification-cluster
+  CONTAINER_NAME: notification-service-container
+  ACCOUNT_ID: 785008697030
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -41,9 +50,6 @@ jobs:
     needs: build-and-push
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
