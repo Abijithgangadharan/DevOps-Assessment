@@ -1,4 +1,4 @@
-name: Deploy to Amazon ECS
+name: Deploy ECS Services
 
 on:
   push:
@@ -8,14 +8,11 @@ on:
 env:
   AWS_REGION: us-west-1
   ECR_REPOSITORY: pt-notification-service
-  ECS_SERVICE: pt-notification-service
-  ECS_CLUSTER: pt-notification-cluster
-  CONTAINER_NAME: notification-service-container
   ACCOUNT_ID: 785008697030
 
 jobs:
-  deploy:
-    name: Deploy to ECS
+  deploy-notification-service:
+    name: Deploy Notification Service
     runs-on: ubuntu-latest
 
     steps:
@@ -29,15 +26,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy task definition to ECS
-        id: deploy-task-def
+      - name: Fetch Notification Service Task Definition ARN from Terraform
+        id: fetch-notification-task-def
+        run: |
+          echo "Fetching Notification Service task definition ARN from Terraform outputs"
+          TASK_DEFINITION_ARN=$(terraform output aws_ecs_task_definition.notification_task.arn)
+          echo "NOTIFICATION_TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN" >> $GITHUB_ENV
+
+      - name: Deploy Notification Service ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: .aws/task-definition.json
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
+          task-definition: ${{ env.NOTIFICATION_TASK_DEFINITION_ARN }}
+          service: notification-service
+          cluster: pt-notification-cluster
           wait-for-service-stability: true
-
-      - name: Check deployment status
-        run: |
-          echo "Deployment to ECS completed successfully."
