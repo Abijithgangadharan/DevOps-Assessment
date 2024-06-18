@@ -4,8 +4,15 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-
+env:
+  AWS_REGION: us-west-1
+  ECR_REPOSITORY: pt-email-service
+  ECS_SERVICE: email-service
+  ECS_CLUSTER: notification-cluster
+  CONTAINER_NAME: pt-email-service
+  ECS_TASK_DEFINITION: .aws/task-definition-email.json
+  ACCOUNT_ID: 785008697030
+  
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -21,48 +28,35 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-1
 
-      - name: Log in to Amazon ECR
+      - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@62f4f872db3836360b72999f4b87f1ff13310f3a
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: 785008697030.dkr.ecr.us-west-1.amazonaws.com/pt-email-service
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile-email
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-  deploy-to-ecs:
-    name: 'Deploy updated container image via blue/green deployment to ECS service.'
-    runs-on: ubuntu-latest
-    needs: build-and-deploy
-    steps:
-      - name: Deploy to ECS
-        uses: silinternational/ecs-deploy@master
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: 'us-west-1'
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build a docker container and
+          # push it to ECR so that it can
+          # be deployed to ECS.
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@c804dfbdd57f713b6c079302a4c01db7017a36fc
         with:
-          aws_access_key_cmd: '--aws-access-key'
-          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_key_cmd: '--aws-secret-key'
-          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          cluster_cmd: '--cluster'
-          cluster: 'notification-cluster'
-          image_cmd: '--image'
-          image: '785008697030.dkr.ecr.us-west-1.amazonaws.com/pt-email-service:latest'
-          region_cmd: '--region'
-          region: 'us-west-1'
-          service_name_cmd: '--service-name'
-          service_name: 'email-service'
-          timeout_cmd: '--timeout'
-          timeout: '360'
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@df9643053eda01f169e64a0e60233aacca83799a
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
