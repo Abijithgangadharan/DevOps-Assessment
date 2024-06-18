@@ -17,6 +17,9 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
+    outputs:
+      IMAGE_URI: ${{ steps.build-image.outputs.IMAGE_URI }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -35,14 +38,16 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Build Docker image
+        id: build-image
         run: |
           docker build -t ${{ env.ECR_REPOSITORY }} .
           docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+          echo "IMAGE_URI=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest" >> $GITHUB_ENV
+          echo "::set-output name=IMAGE_URI::${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest"
 
       - name: Push Docker image to ECR
         run: |
           docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
-          echo "IMAGE=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest" >> $GITHUB_ENV
 
   deploy-to-ecs:
     name: Deploy to ECS
@@ -63,7 +68,7 @@ jobs:
         with:
           task-definition: .aws/task-definition.json
           container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ env.IMAGE }}
+          image: ${{ needs.build-and-push.outputs.IMAGE_URI }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
