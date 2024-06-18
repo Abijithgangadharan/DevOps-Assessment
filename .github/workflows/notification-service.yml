@@ -1,4 +1,4 @@
-name: Build and Deploy Notification Service
+name: Deploy to Amazon ECS
 
 on:
   push:
@@ -11,14 +11,15 @@ env:
   ECS_SERVICE: pt-notification-service
   ECS_CLUSTER: pt-notification-cluster
   CONTAINER_NAME: notification-service-container
-  ACCOUNT_ID: 785008697030
+  ACCOUNT_ID: ***
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  IMAGE_URI: ***.dkr.ecr.us-west-1.amazonaws.com/pt-notification-service:latest
 
 jobs:
-  build-and-push:
+  deploy:
+    name: Deploy to ECS
     runs-on: ubuntu-latest
-
-    outputs:
-      IMAGE_URI: ${{ steps.build-image.outputs.IMAGE_URI }}
 
     steps:
       - name: Checkout code
@@ -31,50 +32,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Build Docker image
-        id: build-image
-        run: |
-          docker build -t ${{ env.ECR_REPOSITORY }} .
-          docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
-          IMAGE_URI=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
-
-      - name: Push Docker image to ECR
-        run: |
-          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
-
-  #deploy-to-ecs:
-    #name: Deploy to ECS
-    #runs-on: ubuntu-latest
-    #needs: build-and-push
-
-   # steps:
-     # - name: Configure AWS credentials
-       # uses: aws-actions/configure-aws-credentials@v1
-       # with:
-         # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-         # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          #aws-region: ${{ env.AWS_REGION }}
-
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: .aws/task-definition.json
-          container-name: ${{ env.CONTAINER_NAME }}
-          image: steps.build-image.outputs.image
-
-      - name: Deploy Amazon ECS task definition
+      - name: Deploy task definition to ECS
+        id: deploy-task-def
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          task-definition: /home/runner/work/_temp/task-definition--2988-94CMfX9JAOn7-.json
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
+
+      - name: Check deployment status
+        run: |
+          echo "Deployment to ECS completed successfully."
