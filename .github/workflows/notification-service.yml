@@ -10,7 +10,7 @@ env:
   ECR_REPOSITORY: pt-notification-service
   ECS_SERVICE: pt-notification-service
   ECS_CLUSTER: pt-notification-cluster
-  CONTAINER_NAME: notification-service-container
+  CONTAINER_NAME: notification-service-task
   ACCOUNT_ID: 785008697030
 
 jobs:
